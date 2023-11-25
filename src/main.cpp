@@ -25,6 +25,15 @@
 #include "Images/Jax_Icon/red.c"
 #include "Images/Jax_Icon/white.c"
 #include "Images/Jax_Icon/yellow.c"
+
+#include "Images/Kae_badge/black.c"
+#include "Images/Kae_badge/blue.c"
+#include "Images/Kae_badge/green.c"
+#include "Images/Kae_badge/orange.c"
+#include "Images/Kae_badge/red.c"
+#include "Images/Kae_badge/white.c"
+#include "Images/Kae_badge/yellow.c"
+
 #include "../.pio/libdeps/esp32doit-devkit-v1/GxEPD2/src/bitmaps/Bitmaps7c800x480.h"
 
 
@@ -49,18 +58,18 @@ void display_image1(){
   display.setFullWindow();
   display.firstPage();
   int width = 448;
-  int height = 448;
+  int height = 480;
   do
   {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(0,0);
-    display.drawBitmap(0,0, black, width, height, GxEPD_BLACK);
-    display.drawBitmap(0,0, blue, width, height, GxEPD_BLUE);
-    display.drawBitmap(0,0, green, width, height, GxEPD_GREEN);
-    display.drawBitmap(0,0, orange, width, height, GxEPD_ORANGE);
-    display.drawBitmap(0,0, red, width, height, GxEPD_RED);
-    display.drawBitmap(0,0, white, width, height, GxEPD_WHITE);
-    display.drawBitmap(0,0, yellow, width, height, GxEPD_YELLOW);
+    display.drawBitmap(0,0, gImage_black, width, height, GxEPD_BLACK);
+    display.drawBitmap(0,0, gImage_blue, width, height, GxEPD_BLUE);
+    display.drawBitmap(0,0, gImage_green, width, height, GxEPD_GREEN);
+    display.drawBitmap(0,0, gImage_orange, width, height, GxEPD_ORANGE);
+    display.drawBitmap(0,0, gImage_red, width, height, GxEPD_RED);
+    display.drawBitmap(0,0, gImage_white, width, height, GxEPD_WHITE);
+    display.drawBitmap(0,0, gImage_yellow, width, height, GxEPD_YELLOW);
   }
   while (display.nextPage());
 }
