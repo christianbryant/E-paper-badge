@@ -1,2 +1,0 @@
-#define IMG_WIDTH 600
-#define IMG_HEIGHT 448

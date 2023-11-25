@@ -18,22 +18,17 @@
 // #include "Images/Jax_Fullbody/red.c"
 // #include "Images/Jax_Fullbody/white.c"
 // #include "Images/Jax_Fullbody/yellow.c"
-#include "Images/Jax_Icon/black.c"
-#include "Images/Jax_Icon/blue.c"
-#include "Images/Jax_Icon/green.c"
-#include "Images/Jax_Icon/orange.c"
-#include "Images/Jax_Icon/red.c"
-#include "Images/Jax_Icon/white.c"
-#include "Images/Jax_Icon/yellow.c"
+// #include "Images/Jax_Icon/black.c"
+// #include "Images/Jax_Icon/blue.c"
+// #include "Images/Jax_Icon/green.c"
+// #include "Images/Jax_Icon/orange.c"
+// #include "Images/Jax_Icon/red.c"
+// #include "Images/Jax_Icon/white.c"
+// #include "Images/Jax_Icon/yellow.c"
 
-#include "Images/Kae_badge/black.c"
-#include "Images/Kae_badge/blue.c"
-#include "Images/Kae_badge/green.c"
-#include "Images/Kae_badge/orange.c"
-#include "Images/Kae_badge/red.c"
-#include "Images/Kae_badge/white.c"
-#include "Images/Kae_badge/yellow.c"
-#include "Images/Kae_badge/img_info.h"
+// #include "Images/KaeBadge/KaeBadgeTest.c"
+
+#include "Images/Image_array.h"
 
 #include "../.pio/libdeps/esp32doit-devkit-v1/GxEPD2/src/bitmaps/Bitmaps7c800x480.h"
 
@@ -51,28 +46,32 @@ GxEPD2_7C < GxEPD2_565c, GxEPD2_565c::HEIGHT / 2 > display(GxEPD2_565c(/*CS=5*/ 
 
 void helloWorld();
 
+int curr_image;
+bool is_displayed;
 
-void display_image1(){
+
+void display_image(){
   display.setRotation(0);
-  // display.setFont(&FreeMonoBold9pt7b);
-  // display.setTextColor(GxEPD_BLACK);
   display.setFullWindow();
   display.firstPage();
-  int width = IMG_WIDTH;
-  int height = IMG_HEIGHT;
+  int width = images[curr_image].width;
+  int height = images[curr_image].height;
+  is_displayed = false;
   do
   {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(0,0);
-    display.drawBitmap(0,0, gImage_black, width, height, GxEPD_BLACK);
-    display.drawBitmap(0,0, gImage_blue, width, height, GxEPD_BLUE);
-    display.drawBitmap(0,0, gImage_green, width, height, GxEPD_GREEN);
-    display.drawBitmap(0,0, gImage_orange, width, height, GxEPD_ORANGE);
-    display.drawBitmap(0,0, gImage_red, width, height, GxEPD_RED);
-    display.drawBitmap(0,0, gImage_white, width, height, GxEPD_WHITE);
-    display.drawBitmap(0,0, gImage_yellow, width, height, GxEPD_YELLOW);
+    display.drawBitmap(0,0, images[curr_image].ColorArray[0], width, height, GxEPD_BLACK);
+    display.drawBitmap(0,0, images[curr_image].ColorArray[1], width, height, GxEPD_WHITE);
+    display.drawBitmap(0,0, images[curr_image].ColorArray[2], width, height, GxEPD_GREEN);
+    display.drawBitmap(0,0, images[curr_image].ColorArray[3], width, height, GxEPD_BLUE);
+    display.drawBitmap(0,0, images[curr_image].ColorArray[4], width, height, GxEPD_RED);
+    display.drawBitmap(0,0, images[curr_image].ColorArray[5], width, height, GxEPD_YELLOW);
+    display.drawBitmap(0,0, images[curr_image].ColorArray[6], width, height, GxEPD_ORANGE);
   }
   while (display.nextPage());
+  is_displayed = true;
+  Serial.println("Image has been displayed!");
 }
 
 void setup()
@@ -80,10 +79,22 @@ void setup()
   display.init(115200); // default 10ms reset pulse, e.g. for bare panels with DESPI-C02
   Serial.begin(115200);
   display.init(115200, true, 2, false); // USE THIS for Waveshare boards with "clever" reset circuit, 2ms reset pulse
-  display_image1();
+  curr_image = 4;
+  Serial.printf("Current Image is: %d\n", curr_image);
+  is_displayed = false;
+  display_image();
   display.hibernate();
+  delay(5000);
 }
 
-const char HelloWorld[] = "Hello World!";
-
-void loop() {};
+void loop() {
+  Serial.printf("Current Image is: %d\n", curr_image);
+  display_image();
+  display.hibernate();
+  if(curr_image == 4){
+    curr_image = 0;
+  } else {
+    curr_image += 1;
+  }
+  delay(5000);
+};
