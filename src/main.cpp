@@ -33,6 +33,7 @@
 #include "Images/Kae_badge/red.c"
 #include "Images/Kae_badge/white.c"
 #include "Images/Kae_badge/yellow.c"
+#include "Images/Kae_badge/img_info.h"
 
 #include "../.pio/libdeps/esp32doit-devkit-v1/GxEPD2/src/bitmaps/Bitmaps7c800x480.h"
 
@@ -57,8 +58,8 @@ void display_image1(){
   // display.setTextColor(GxEPD_BLACK);
   display.setFullWindow();
   display.firstPage();
-  int width = 448;
-  int height = 480;
+  int width = IMG_WIDTH;
+  int height = IMG_HEIGHT;
   do
   {
     display.fillScreen(GxEPD_WHITE);
