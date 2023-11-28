@@ -2,27 +2,11 @@
 #include "amber_jax/amber_jax.c"
 #include "KaeBadge/KaeBadgeTest.c"
 #include "boykisser/boykisser.c"
-#include "fullbody/fullbody.c"
 
 struct Images {
     const unsigned char** ColorArray;
     const int width;
     const int height;
-};
-
-const unsigned char *fullbody_arrays[] = {
-    fullbody_black,
-    fullbody_white,
-    fullbody_green,
-    fullbody_blue,
-    fullbody_red,
-    fullbody_yellow,
-    fullbody_orange,
-};
-const struct Images fullbody = {
-    fullbody_arrays,
-    600,
-    448
 };
 
 const unsigned char *boykisser_arrays[] = {
@@ -85,12 +69,9 @@ const struct Images jax_griffin = {
     448
 };
 
-
 const struct Images images[] = {
-    fullbody,
     boykisser,
     KaeBadgeTest,
     amber_jax,
     jax_griffin
 };
-

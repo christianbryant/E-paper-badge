@@ -5,7 +5,7 @@ import os
 import shutil
 
 
-name = "amber_jax"
+name = "savannah"
 rotate = False
 
 # Define the color palette
