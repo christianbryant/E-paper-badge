@@ -1,9 +1,12 @@
+#include "Jax_Pan/Jax_Pan.c"
+#include "Jax_Fullbody/Jax_Fullbody.c"
 #include "jax_griffin/jax_griffin.c"
-#include "amber_jax/amber_jax.c"
-#include "KaeBadge/KaeBadgeTest.c"
+// #include "amber_jax/amber_jax.c"
+// #include "KaeBadge/KaeBadgeTest.c"
 #include "boykisser/boykisser.c"
 
 struct Images {
+    const String name;
     const unsigned char** ColorArray;
     const int width;
     const int height;
@@ -19,40 +22,41 @@ const unsigned char *boykisser_arrays[] = {
     boykisser_orange,
 };
 const struct Images boykisser = {
+    "boykisser",
     boykisser_arrays,
     600,
     448
 };
 
-const unsigned char *KaeBadgeTest_arrays[] = {
-    KaeBadgeTest_black,
-    KaeBadgeTest_white,
-    KaeBadgeTest_green,
-    KaeBadgeTest_blue,
-    KaeBadgeTest_red,
-    KaeBadgeTest_yellow,
-    KaeBadgeTest_orange,
-};
-const struct Images KaeBadgeTest = {
-    KaeBadgeTest_arrays,
-    600,
-    448
-};
+// const unsigned char *KaeBadgeTest_arrays[] = {
+//     KaeBadgeTest_black,
+//     KaeBadgeTest_white,
+//     KaeBadgeTest_green,
+//     KaeBadgeTest_blue,
+//     KaeBadgeTest_red,
+//     KaeBadgeTest_yellow,
+//     KaeBadgeTest_orange,
+// };
+// const struct Images KaeBadgeTest = {
+//     KaeBadgeTest_arrays,
+//     600,
+//     448
+// };
 
-const unsigned char *amber_jax_arrays[] = {
-    amber_jax_black,
-    amber_jax_white,
-    amber_jax_green,
-    amber_jax_blue,
-    amber_jax_red,
-    amber_jax_yellow,
-    amber_jax_orange,
-};
-const struct Images amber_jax = {
-    amber_jax_arrays,
-    600,
-    448
-};
+// const unsigned char *amber_jax_arrays[] = {
+//     amber_jax_black,
+//     amber_jax_white,
+//     amber_jax_green,
+//     amber_jax_blue,
+//     amber_jax_red,
+//     amber_jax_yellow,
+//     amber_jax_orange,
+// };
+// const struct Images amber_jax = {
+//     amber_jax_arrays,
+//     600,
+//     448
+// };
 
 const unsigned char *jax_griffin_arrays[] = {
     jax_griffin_black,
@@ -64,14 +68,49 @@ const unsigned char *jax_griffin_arrays[] = {
     jax_griffin_orange,
 };
 const struct Images jax_griffin = {
+    "jax_griffin",
     jax_griffin_arrays,
+    600,
+    448
+};
+
+const unsigned char *Jax_Fullbody_arrays[] = {
+    Jax_Fullbody_black,
+    Jax_Fullbody_white,
+    Jax_Fullbody_green,
+    Jax_Fullbody_blue,
+    Jax_Fullbody_red,
+    Jax_Fullbody_yellow,
+    Jax_Fullbody_orange,
+};
+const struct Images Jax_Fullbody = {
+    "Jax_Fullbody",
+    Jax_Fullbody_arrays,
+    600,
+    448
+};
+
+const unsigned char *Jax_Pan_arrays[] = {
+    Jax_Pan_black,
+    Jax_Pan_white,
+    Jax_Pan_green,
+    Jax_Pan_blue,
+    Jax_Pan_red,
+    Jax_Pan_yellow,
+    Jax_Pan_orange,
+};
+const struct Images Jax_Pan = {
+    "Jax_Pan",
+    Jax_Pan_arrays,
     600,
     448
 };
 
 const struct Images images[] = {
     boykisser,
-    KaeBadgeTest,
-    amber_jax,
-    jax_griffin
+    // KaeBadgeTest,
+    // amber_jax,
+    jax_griffin,
+    Jax_Fullbody,
+    Jax_Pan
 };

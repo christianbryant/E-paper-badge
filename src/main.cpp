@@ -45,7 +45,7 @@ void setup()
   Serial.begin(115200);
   display.init(115200, true, 2, false); // USE THIS for Waveshare boards with "clever" reset circuit, 2ms reset pulse
   curr_image = 3;
-  Serial.printf("Current Image is: %d\n", curr_image);
+  Serial.printf("Current Image is: %s\n", images[curr_image].name);
   is_displayed = false;
   display_image();
   display.hibernate();
@@ -53,7 +53,7 @@ void setup()
 }
 
 void loop() {
-  Serial.printf("Current Image is: %d\n", curr_image);
+  Serial.printf("Current Image is: %s\n", images[curr_image].name);
   display_image();
   display.hibernate();
   if(curr_image == 3){

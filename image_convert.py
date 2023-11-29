@@ -5,7 +5,7 @@ import os
 import shutil
 
 
-name = "savannah"
+name = "Jax_Pan"
 rotate = False
 
 # Define the color palette
