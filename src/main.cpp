@@ -39,10 +39,26 @@ void display_image(){
   Serial.println("Image has been displayed!");
 }
 
+void testing_buttons(){
+  int current_state = digitalRead(32);
+  int current_state2 = digitalRead(33);
+  int current_state3 = digitalRead(25);
+  int current_state4 = digitalRead(26);
+  Serial.printf("Current State: %d\n", current_state);
+  Serial.printf("Current State2: %d\n", current_state2);
+  Serial.printf("Current State3: %d\n", current_state3);
+  Serial.printf("Current State4: %d\n", current_state4);
+
+}
+
 void setup()
 {
   display.init(115200); // default 10ms reset pulse, e.g. for bare panels with DESPI-C02
   Serial.begin(115200);
+  pinMode(32, INPUT_PULLUP);
+  pinMode(33, INPUT_PULLUP);
+  pinMode(25, INPUT_PULLUP);
+  pinMode(26, INPUT_PULLUP);
   display.init(115200, true, 2, false); // USE THIS for Waveshare boards with "clever" reset circuit, 2ms reset pulse
   curr_image = 3;
   Serial.printf("Current Image is: %s\n", images[curr_image].name);
@@ -61,5 +77,5 @@ void loop() {
   } else {
     curr_image += 1;
   }
-  delay(5000);
+  delay(2000);
 };
