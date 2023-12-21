@@ -28,36 +28,6 @@ const struct Images boykisser = {
     448
 };
 
-// const unsigned char *KaeBadgeTest_arrays[] = {
-//     KaeBadgeTest_black,
-//     KaeBadgeTest_white,
-//     KaeBadgeTest_green,
-//     KaeBadgeTest_blue,
-//     KaeBadgeTest_red,
-//     KaeBadgeTest_yellow,
-//     KaeBadgeTest_orange,
-// };
-// const struct Images KaeBadgeTest = {
-//     KaeBadgeTest_arrays,
-//     600,
-//     448
-// };
-
-// const unsigned char *amber_jax_arrays[] = {
-//     amber_jax_black,
-//     amber_jax_white,
-//     amber_jax_green,
-//     amber_jax_blue,
-//     amber_jax_red,
-//     amber_jax_yellow,
-//     amber_jax_orange,
-// };
-// const struct Images amber_jax = {
-//     amber_jax_arrays,
-//     600,
-//     448
-// };
-
 const unsigned char *jax_griffin_arrays[] = {
     jax_griffin_black,
     jax_griffin_white,
@@ -99,6 +69,7 @@ const unsigned char *Jax_Pan_arrays[] = {
     Jax_Pan_yellow,
     Jax_Pan_orange,
 };
+
 const struct Images Jax_Pan = {
     "Jax_Pan",
     Jax_Pan_arrays,
