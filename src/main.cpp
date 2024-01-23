@@ -1,4 +1,3 @@
-
 #include <GxEPD2_7C.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
 #include <Arduino.h>
@@ -9,11 +8,11 @@
 #include <SD_MMC.h>
 #include <FS.h>
 
-#include "../.pio/libdeps/esp32doit-devkit-v1/GxEPD2/src/bitmaps/Bitmaps7c800x480.h"
+#include "../.pio/libdeps/esp32-s3-devkitm-1/GxEPD2/src/bitmaps/Bitmaps7c800x480.h"
 
 // // alternately you can copy the constructor from GxEPD2_display_selection.h or GxEPD2_display_selection_added.h to here
 // // e.g. for Wemos D1 mini:
-GxEPD2_7C < GxEPD2_565c, GxEPD2_565c::HEIGHT / 2 > display(GxEPD2_565c(/*CS=5*/ 10, /*DC=*/ 13, /*RST=*/ 3, /*BUSY=*/ 14)); // Waveshare 5.65" 7-color
+GxEPD2_7C < GxEPD2_565c, GxEPD2_565c::HEIGHT / 2 > epaper_display(GxEPD2_565c(/*CS=5*/ 10, /*DC=*/ 13, /*RST=*/ 3, /*BUSY=*/ 14)); // Waveshare 5.65" 7-color
 
 Adafruit_SSD1331 oled_display = Adafruit_SSD1331(7, 18, 15, 16, 17); // Oled Screen
 
@@ -86,6 +85,7 @@ float const MIN_BATTERY_VOLTAGE = 3.3;
 unsigned long button_time = 0;  
 unsigned long last_button_time = 0; 
 
+// GPIO pins for buttons
 int buttons[4] = {6,21,48,47};
 
 void oled_setup() {
@@ -96,23 +96,28 @@ void oled_setup() {
   delay(3000);
 }
 
+void display_text(String text){
+  oled_display.fillScreen(BLACK);
+  oled_display.setCursor(0,0);
+  oled_display.printf(text.c_str());
+}
 
 void display_image(){
-  display.setRotation(0);
-  display.setFullWindow();
-  display.firstPage();
+  epaper_display.setRotation(0);
+  epaper_display.setFullWindow();
+  epaper_display.firstPage();
   int width = 600;
   int height = 448;
   is_displayed = false;
   do
   {
-    display.fillScreen(GxEPD_WHITE);
-    display.setCursor(0,0);
+    epaper_display.fillScreen(GxEPD_WHITE);
+    epaper_display.setCursor(0,0);
     for (int i = 0; i < 7; i++){
-      display.drawBitmap(0,0, color_arrays[i], width, height, getColor(i));
+      epaper_display.drawBitmap(0,0, color_arrays[i], width, height, getColor(i));
     }
   }
-  while (display.nextPage());
+  while (epaper_display.nextPage());
   is_displayed = true;
   Serial.println("Image has been displayed!");
 }
@@ -121,9 +126,9 @@ void measurePower(){
   busvoltage = ina219.getBusVoltage_V();
   current_mA = ina219.getCurrent_mA();
   power_mW = ina219.getPower_mW();
-  oled_display.fillScreen(BLACK);
-  oled_display.setCursor(0,0);
-  oled_display.printf("Voltage: %.4f\n", busvoltage);
+  char *buffer;
+  snprintf(buffer, 100, "Voltage: %.4f\n", busvoltage);
+  display_text(buffer);
 
   oled_display.printf("Current_mA: %.4f\n", current_mA);
   oled_display.printf("Power(mW): %.4f\n", power_mW);
@@ -312,9 +317,7 @@ void sd_setup(){
     return;
   }
   if(!SD_MMC.begin("/sdcard", false, false, 20000, 5)){
-    oled_display.fillScreen(BLACK);
-    oled_display.setCursor(0,0);
-    oled_display.printf("Card Mount Failed\n");
+    display_text("Card Mount Failed\n");
     delay(2000);
     Serial.println("Card Mount Failed");
     return;
@@ -326,76 +329,81 @@ void sd_setup(){
   }
 }
 
-void setup()
-{
-  display.init(115200); // default 10ms reset pulse, e.g. for bare panels with DESPI-C02
-  oled_setup();
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_6, 0);
-  Serial.begin(115200);
-  setup_buttons();
-  display.init(115200, true, 2, false); // USE THIS for Waveshare boards with "clever" reset circuit, 2ms reset pulse
-  is_displayed = false;
-  if(digitalRead(39) == HIGH){
-    sd_setup();
-  } else {
-    oled_display.fillScreen(BLACK);
-    oled_display.setCursor(0,0);
-    oled_display.printf("No SD Card\n");
-    while (digitalRead(39) == LOW){
-      delay(1000);
-      Serial.println("No SD Card");
-    }
-    oled_display.fillScreen(BLACK);
-    oled_display.setCursor(0,0);
-    oled_display.printf("SD Card inserted!\n");
-    sd_setup();
-  }
-  read_image_array(SD_MMC, "/Images/Image_array.txt");
-  allocate_color_arrays();
+void first_boot_setup(){
   if (first_boot == true){
     curr_image = 0;
     first_boot = false;
     setup_color_arrays(SD_MMC);
-    oled_display.fillScreen(BLACK);
-    oled_display.setCursor(0,0);
-    oled_display.printf("Changing Image to: %s\n", image_names[curr_image].c_str());
+    char *buffer;
+    snprintf(buffer, 200, "Changing Image to: %s\n", image_names[curr_image].c_str());
+    display_text(buffer);
     display_image();
-    display.hibernate();
+    epaper_display.hibernate();
   }
+}
+
+void ESP_Setup(){
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_6, 0);
+  Serial.begin(115200);
+  setup_buttons();
+}
+
+void epaper_Setup(){
+  epaper_display.init(115200); // default 10ms reset pulse, e.g. for bare panels with DESPI-C02
+  epaper_display.init(115200, true, 2, false); // USE THIS for Waveshare boards with "clever" reset circuit, 2ms reset pulse
+  is_displayed = false;
+}
+
+void setup()
+{
+  oled_setup();
+  ESP_Setup();
+  epaper_Setup();
+  if(digitalRead(39) == HIGH){
+    sd_setup();
+  } else {
+    display_text("No SD Card dectected!\n");
+    while (digitalRead(39) == LOW){
+      delay(1000);
+      Serial.println("No SD Card");
+    }
+    display_text("SD Card inserted!\n");
+    sd_setup();
+  }
+  read_image_array(SD_MMC, "/Images/Image_array.txt");
+  allocate_color_arrays();
+  first_boot_setup();
   last_button_time = millis();
-  oled_display.fillScreen(BLACK);
-  oled_display.setCursor(0,0);
-  oled_display.printf("Current Image is: %s\n", image_names[curr_image].c_str());
+  char *buffer;
+  snprintf(buffer, 200, "Current Image is: %s\n", image_names[curr_image].c_str());
+  display_text(buffer);
   last_sleep_time = millis();
 }
 
 void loop() {
   unsigned long curr_time = millis();
+  char *buffer;
   if(curr_time - last_sleep_time <= 100000){
     if(changed_image_flag && !display_image_flag){
-      oled_display.fillScreen(BLACK);
-      oled_display.setCursor(0,0);
-      oled_display.printf("Change image to: %s\n", image_names[curr_image].c_str());
+      snprintf(buffer, 200, "Change image to: %s\n", image_names[curr_image].c_str());
+      display_text(buffer);
       changed_image_flag = false;
       delay(100);
     } 
     else if (!changed_image_flag && display_image_flag){
-      oled_display.fillScreen(BLACK);
-      oled_display.setCursor(0,0);
-      oled_display.printf("Changing Image to: %s\n", image_names[curr_image].c_str());
+      snprintf(buffer, 200, "Changing Image to: %s\n", image_names[curr_image].c_str());
+      display_text(buffer);
       setup_color_arrays(SD_MMC);
       display_image();
-      display.hibernate();
-      oled_display.fillScreen(BLACK);
-      oled_display.setCursor(0,0);
-      oled_display.printf("Current Image is: %s\n", image_names[curr_image].c_str());
+      epaper_display.hibernate();
+      snprintf(buffer, 200, "Current Image is: %s\n", image_names[curr_image].c_str());
+      display_text(buffer);
       display_image_flag = false;
       changed_image_flag = false;
     }
   } else {
-    oled_display.fillScreen(BLACK);
-    oled_display.setCursor(0,0);
-    oled_display.println("Going to sleep!");
+    display_text("Going to sleep!\n");
+    free_color_arrays();
     delay(5000);
     last_sleep_time = millis();
     esp_deep_sleep_start();
