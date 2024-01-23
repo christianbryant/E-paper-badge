@@ -5,7 +5,7 @@ import os
 import shutil
 
 
-name = "Jax_Pan"
+name = "Jax_Fullbody"
 rotate = False
 
 # Define the color palette
@@ -50,7 +50,7 @@ def convert_image_2_dithered(image, rotate):
     p_img.putpalette(palette)
     quantized_image = resized_image.quantize(palette=p_img)
     dithered_image = quantized_image.convert('P')
-    os.chdir(f"../src/Images/{name}")
+    os.chdir(f"../Images/{name}")
     dithered_image.save("dithered.png")
 def convert_image_2_7_colors(name, image):
     # Open the input image
@@ -90,7 +90,7 @@ def convert_bmp_to_array(bmp_file, name, curr_color):
     image_data = list(bmp.getdata())
 
     with open (name + ".c", "a") as file:
-        file.write(f"const unsigned char {name}_{curr_color}[{width * height // 8}] = {{\n")
+        file.write(f"const unsigned char {curr_color}[{width * height // 8}] = {{\n")
 
         bit_list = []
 
@@ -138,31 +138,24 @@ def update_image_array(name):
     width, height = img.size
     os.chdir("..")
     os.chdir("..")
+    print(os.getcwd())
 
-    with open ("image_array.h", "r") as file:
+    with open ("image_array.txt", "r") as file:
         filedata = file.read()
         file.close()
 
-    with open ("image_array.h", "w") as file:
-        file.write(f"#include \"{name}/{name}.c\"\n" + filedata)
-        file.write(f"\nconst unsigned char *{name}_arrays[] = {{\n")
-        for color in colors:
-            file.write(f"    {name}_{color},\n")
-        file.write("};\n")
-        file.write(f"const struct Images {name} = {{\n")
-        file.write(f"    {name}_arrays,\n")
-        file.write(f"    {width},\n")
-        file.write(f"    {height}\n")
-        file.write("};\n")
+    with open ("image_array.txt", "a") as file:
+        # write information at the end of the file
+        file.write(f"{name},\n")
         file.close()
 
 
-os.chdir("./src/Images")
+os.chdir("./Images")
 os.makedirs(f"{name}", exist_ok=True)
 os.makedirs(f"{name}/bmp", exist_ok=True)
 os.makedirs(f"{name}/jpgs", exist_ok=True)
 os.chdir("..")
-os.chdir("..")
+
 os.chdir("./Images_On_ESP")
 
 convert_image_2_dithered(f"{name}.png", rotate)

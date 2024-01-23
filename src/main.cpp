@@ -9,8 +9,6 @@
 #include <SD_MMC.h>
 #include <FS.h>
 
-#include "Images/Image_array.h"
-
 #include "../.pio/libdeps/esp32doit-devkit-v1/GxEPD2/src/bitmaps/Bitmaps7c800x480.h"
 
 // // alternately you can copy the constructor from GxEPD2_display_selection.h or GxEPD2_display_selection_added.h to here
@@ -31,9 +29,42 @@ Adafruit_INA219 ina219; // Current Monitor
 #define YELLOW          0xFFE0
 #define WHITE           0xFFFF
 
+uint16_t getColor(int index) {
+  switch (index) {
+    case 0: return GxEPD_BLACK;
+    case 1: return GxEPD_WHITE;
+    case 2: return GxEPD_GREEN;
+    case 3: return GxEPD_BLUE;
+    case 4: return GxEPD_RED;
+    case 5: return GxEPD_YELLOW;
+    case 6: return GxEPD_ORANGE;
+    default: return GxEPD_BLACK;
+  }
+}
+
+unsigned char *color_arrays[7];
+
+RTC_DATA_ATTR bool first_boot = true;
 RTC_DATA_ATTR int curr_image;
 RTC_DATA_ATTR unsigned long last_sleep_time;
+RTC_DATA_ATTR int total_images;
+RTC_DATA_ATTR String image_names[50];
 
+void allocate_color_arrays(){
+  for (int i = 0; i < 7; i++){
+    color_arrays[i] = (unsigned char*) ps_malloc(33600);
+    for(int j = 0; j < 33600; j++){
+      color_arrays[i][j] = 0;
+    }
+  }
+  Serial.println("Memory allocated!");
+}
+
+void free_color_arrays(){
+  for (int i = 0; i < 7; i++){
+    free(color_arrays[i]);
+  }
+}
 
 bool is_displayed;
 
@@ -61,7 +92,7 @@ void oled_setup() {
   oled_display.begin();
   oled_display.fillScreen(BLACK);
   oled_display.setCursor(0,0);
-  oled_display.println("Screen Started!");
+  oled_display.println("System Starting!");
   delay(3000);
 }
 
@@ -70,20 +101,16 @@ void display_image(){
   display.setRotation(0);
   display.setFullWindow();
   display.firstPage();
-  int width = images[curr_image].width;
-  int height = images[curr_image].height;
+  int width = 600;
+  int height = 448;
   is_displayed = false;
   do
   {
     display.fillScreen(GxEPD_WHITE);
     display.setCursor(0,0);
-    display.drawBitmap(0,0, images[curr_image].ColorArray[0], width, height, GxEPD_BLACK);
-    display.drawBitmap(0,0, images[curr_image].ColorArray[1], width, height, GxEPD_WHITE);
-    display.drawBitmap(0,0, images[curr_image].ColorArray[2], width, height, GxEPD_GREEN);
-    display.drawBitmap(0,0, images[curr_image].ColorArray[3], width, height, GxEPD_BLUE);
-    display.drawBitmap(0,0, images[curr_image].ColorArray[4], width, height, GxEPD_RED);
-    display.drawBitmap(0,0, images[curr_image].ColorArray[5], width, height, GxEPD_YELLOW);
-    display.drawBitmap(0,0, images[curr_image].ColorArray[6], width, height, GxEPD_ORANGE);
+    for (int i = 0; i < 7; i++){
+      display.drawBitmap(0,0, color_arrays[i], width, height, getColor(i));
+    }
   }
   while (display.nextPage());
   is_displayed = true;
@@ -209,24 +236,7 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
     }
 }
 
-void readFile(fs::FS &fs, const char * path){
-    Serial.printf("Reading file: %s\n", path);
-
-    File file = fs.open(path);
-    if(!file){
-        Serial.println("Failed to open file for reading");
-        return;
-    }
-
-    Serial.print("Read from file: ");
-    while(file.available()){
-        Serial.write(file.read());
-    }
-}
-
 void read_image_array(fs::FS &fs, const char * path){
-    Serial.printf("Reading file: %s\n", path);
-
     File file = fs.open(path);
     if(!file){
         Serial.println("Failed to open file for reading");
@@ -234,24 +244,65 @@ void read_image_array(fs::FS &fs, const char * path){
     }
     int curr_char = 0;
     String curr_line = "";
-    Serial.print("Read from file: \n");
-    int total_images = 0;
+    total_images = 0;
     while(file.available()){
-      curr_line = file.readStringUntil('\n');
-      if(curr_line.startsWith("#")){
-        Serial.printf("Found Image: %s\n", curr_line.c_str());
-        total_images += 1;
-      }
-      if(curr_line.startsWith("const struct Images")){
-        Serial.println("Found Image Struct");
-        while(!curr_line.endsWith("};\n")){
-          Serial.printf("Found Image Struct: %s\n", curr_line.c_str());
-          curr_line.concat(file.readStringUntil('\n'));
-        }
-        Serial.printf("Found Image Struct: %s\n", curr_line.c_str());
-      }
+      curr_line = file.readStringUntil(',');
+      file.readStringUntil('\n');
+      image_names[total_images] = curr_line.c_str();
+      total_images += 1;
     }
     Serial.printf("Total Images: %d\n", total_images);
+    file.close();
+}
+
+void process_file(File image_file){
+  String file_content = "";
+  int curr_array = 0;
+  int arrayIndex = 0;
+  int arr_item = 0;
+  bool end_of_array = false;
+  while (image_file.available() && curr_array < 7) {
+    file_content = image_file.readStringUntil('\n');
+    end_of_array = false;
+    if(file_content.indexOf("const unsigned char") != -1){
+      arrayIndex = 0;
+      while(end_of_array == false){
+        file_content = image_file.readStringUntil('\n');
+        if(file_content.indexOf("}") != -1){
+          curr_array++;
+          end_of_array = true;
+        } else {
+          arr_item = 0;
+          char* arrayValue = strtok((char*)file_content.c_str(), ", ");
+          if (strstr(arrayValue, "0x") != NULL){
+            while (arrayValue != NULL && arr_item < 16) {
+              if (arrayValue[0] == ' '){
+                arrayValue = arrayValue + 1;
+              }
+              char arrVal[3] = {arrayValue[2], arrayValue[3], '\0'};
+              color_arrays[curr_array][arrayIndex++] = (unsigned char)strtol(arrVal, NULL, 16);
+              arr_item++;
+              arrayValue = strtok(NULL, ",");
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+void setup_color_arrays(fs::FS &fs){
+  if (total_images == 0){
+    Serial.println("No images found!");
+    return;
+  }
+  File image_file = fs.open("/Images/" + image_names[curr_image] + "/" + image_names[curr_image] + ".c", FILE_READ);
+  if(!image_file){
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  process_file(image_file);
+  image_file.close();
 }
 
 void sd_setup(){
@@ -260,34 +311,19 @@ void sd_setup(){
     Serial.println("Error setting SD_MMC pins");
     return;
   }
-  delay(1000);
-  if(!SD_MMC.begin("/sdcard", false, false, 20000)){
+  if(!SD_MMC.begin("/sdcard", false, false, 20000, 5)){
+    oled_display.fillScreen(BLACK);
+    oled_display.setCursor(0,0);
+    oled_display.printf("Card Mount Failed\n");
+    delay(2000);
     Serial.println("Card Mount Failed");
     return;
   }
   uint8_t cardType = SD_MMC.cardType();
-
   if(cardType == CARD_NONE){
     Serial.println("No SD_MMC card attached");
     return;
   }
-
-  Serial.print("SD_MMC Card Type: ");
-  if(cardType == CARD_MMC){
-    Serial.println("MMC");
-  } else if(cardType == CARD_SD){
-    Serial.println("SDSC");
-  } else if(cardType == CARD_SDHC){
-    Serial.println("SDHC");
-  } else {
-    Serial.println("UNKNOWN");
-  }
-
-  uint64_t cardSize = SD_MMC.cardSize() / (1024 * 1024);
-  Serial.printf("SD_MMC Card Size: %lluMB\n", cardSize);
-  listDir(SD_MMC, "/", 0);
-  //readFile(SD_MMC, "/Images/Image_array.h");
-  read_image_array(SD_MMC, "/Images/Image_array.h");
 }
 
 void setup()
@@ -298,44 +334,64 @@ void setup()
   Serial.begin(115200);
   setup_buttons();
   display.init(115200, true, 2, false); // USE THIS for Waveshare boards with "clever" reset circuit, 2ms reset pulse
-  curr_image = 0;
   is_displayed = false;
   if(digitalRead(39) == HIGH){
     sd_setup();
   } else {
-    Serial.println("No SD Card");
+    oled_display.fillScreen(BLACK);
+    oled_display.setCursor(0,0);
+    oled_display.printf("No SD Card\n");
+    while (digitalRead(39) == LOW){
+      delay(1000);
+      Serial.println("No SD Card");
+    }
+    oled_display.fillScreen(BLACK);
+    oled_display.setCursor(0,0);
+    oled_display.printf("SD Card inserted!\n");
+    sd_setup();
+  }
+  read_image_array(SD_MMC, "/Images/Image_array.txt");
+  allocate_color_arrays();
+  if (first_boot == true){
+    curr_image = 0;
+    first_boot = false;
+    setup_color_arrays(SD_MMC);
+    oled_display.fillScreen(BLACK);
+    oled_display.setCursor(0,0);
+    oled_display.printf("Changing Image to: %s\n", image_names[curr_image].c_str());
+    display_image();
+    display.hibernate();
   }
   last_button_time = millis();
   oled_display.fillScreen(BLACK);
   oled_display.setCursor(0,0);
-  oled_display.printf("Current Image is: %s\n", images[curr_image].name);
+  oled_display.printf("Current Image is: %s\n", image_names[curr_image].c_str());
   last_sleep_time = millis();
 }
 
 void loop() {
   unsigned long curr_time = millis();
-  // Serial.println(curr_time - last_sleep_time);
-  if(curr_time - last_sleep_time <= 50000){
+  if(curr_time - last_sleep_time <= 100000){
     if(changed_image_flag && !display_image_flag){
       oled_display.fillScreen(BLACK);
       oled_display.setCursor(0,0);
-      oled_display.printf("Change image to: %s\n", images[curr_image].name);
+      oled_display.printf("Change image to: %s\n", image_names[curr_image].c_str());
       changed_image_flag = false;
       delay(100);
     } 
     else if (!changed_image_flag && display_image_flag){
       oled_display.fillScreen(BLACK);
       oled_display.setCursor(0,0);
-      oled_display.printf("Current Image is: %s\n", images[curr_image].name);
+      oled_display.printf("Changing Image to: %s\n", image_names[curr_image].c_str());
+      setup_color_arrays(SD_MMC);
       display_image();
       display.hibernate();
+      oled_display.fillScreen(BLACK);
+      oled_display.setCursor(0,0);
+      oled_display.printf("Current Image is: %s\n", image_names[curr_image].c_str());
       display_image_flag = false;
       changed_image_flag = false;
     }
-    // if(curr_time - lastBatteryUpdate <= 2500){
-    //   measurePower();
-    //   lastBatteryUpdate = curr_time;
-    // }
   } else {
     oled_display.fillScreen(BLACK);
     oled_display.setCursor(0,0);
