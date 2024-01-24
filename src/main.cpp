@@ -126,7 +126,7 @@ void measurePower(){
   busvoltage = ina219.getBusVoltage_V();
   current_mA = ina219.getCurrent_mA();
   power_mW = ina219.getPower_mW();
-  char *buffer;
+  char buffer[100];
   snprintf(buffer, 100, "Voltage: %.4f\n", busvoltage);
   display_text(buffer);
 
@@ -261,6 +261,8 @@ void read_image_array(fs::FS &fs, const char * path){
 }
 
 void process_file(File image_file){
+  Serial.println("Processing file!");
+  unsigned long start = millis();
   String file_content = "";
   int curr_array = 0;
   int arrayIndex = 0;
@@ -269,7 +271,7 @@ void process_file(File image_file){
   while (image_file.available() && curr_array < 7) {
     file_content = image_file.readStringUntil('\n');
     end_of_array = false;
-    if(file_content.indexOf("const unsigned char") != -1){
+    if(file_content.indexOf("{") != -1){
       arrayIndex = 0;
       while(end_of_array == false){
         file_content = image_file.readStringUntil('\n');
@@ -278,22 +280,19 @@ void process_file(File image_file){
           end_of_array = true;
         } else {
           arr_item = 0;
-          char* arrayValue = strtok((char*)file_content.c_str(), ", ");
-          if (strstr(arrayValue, "0x") != NULL){
-            while (arrayValue != NULL && arr_item < 16) {
-              if (arrayValue[0] == ' '){
-                arrayValue = arrayValue + 1;
-              }
-              char arrVal[3] = {arrayValue[2], arrayValue[3], '\0'};
-              color_arrays[curr_array][arrayIndex++] = (unsigned char)strtol(arrVal, NULL, 16);
-              arr_item++;
-              arrayValue = strtok(NULL, ",");
-            }
+          char* arrayValue = strtok((char*)file_content.c_str(), ",");
+          while (arrayValue != NULL && arr_item < 4200) {
+            color_arrays[curr_array][arrayIndex++] = (unsigned char)strtol(arrayValue, NULL, 16);
+            arr_item++;
+            arrayValue = strtok(NULL, ",");
           }
         }
       }
     }
   }
+  unsigned long end = millis();
+  unsigned long total = (end - start)/1000;
+  Serial.printf("Time to process file: %lu\n", total);
 }
 
 void setup_color_arrays(fs::FS &fs){
@@ -334,8 +333,10 @@ void first_boot_setup(){
     curr_image = 0;
     first_boot = false;
     setup_color_arrays(SD_MMC);
-    char *buffer;
+    Serial.printf("Before buffer\n");
+    char buffer[200];
     snprintf(buffer, 200, "Changing Image to: %s\n", image_names[curr_image].c_str());
+    Serial.printf("After buffer\n");
     display_text(buffer);
     display_image();
     epaper_display.hibernate();
@@ -374,7 +375,7 @@ void setup()
   allocate_color_arrays();
   first_boot_setup();
   last_button_time = millis();
-  char *buffer;
+  char buffer[200];
   snprintf(buffer, 200, "Current Image is: %s\n", image_names[curr_image].c_str());
   display_text(buffer);
   last_sleep_time = millis();
@@ -382,7 +383,7 @@ void setup()
 
 void loop() {
   unsigned long curr_time = millis();
-  char *buffer;
+  char buffer[200];
   if(curr_time - last_sleep_time <= 100000){
     if(changed_image_flag && !display_image_flag){
       snprintf(buffer, 200, "Change image to: %s\n", image_names[curr_image].c_str());

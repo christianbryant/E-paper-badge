@@ -5,7 +5,6 @@ import os
 import shutil
 
 
-name = "Jax_Fullbody"
 rotate = False
 
 # Define the color palette
@@ -50,7 +49,7 @@ def convert_image_2_dithered(image, rotate):
     p_img.putpalette(palette)
     quantized_image = resized_image.quantize(palette=p_img)
     dithered_image = quantized_image.convert('P')
-    os.chdir(f"../Images/{name}")
+    os.chdir(f"../Images/{image.replace('.png', '')}")
     dithered_image.save("dithered.png")
 def convert_image_2_7_colors(name, image):
     # Open the input image
@@ -150,23 +149,37 @@ def update_image_array(name):
         file.close()
 
 
+
+def get_images(dir):
+    os.chdir(dir)
+    images = []
+    for file in os.listdir():
+        if file.endswith(".png"):
+            file = file.replace(".png", "")
+            images.append(file)
+    return images
+
+
+img_list = get_images("./Images_On_ESP")
+os.chdir("..")
 os.chdir("./Images")
-os.makedirs(f"{name}", exist_ok=True)
-os.makedirs(f"{name}/bmp", exist_ok=True)
-os.makedirs(f"{name}/jpgs", exist_ok=True)
-os.chdir("..")
+for img in img_list:
+    os.makedirs(f"{img}", exist_ok=True)
+    os.makedirs(f"{img}/bmp", exist_ok=True)
+    os.makedirs(f"{img}/jpgs", exist_ok=True)
+    os.chdir("..")
+    print(os.getcwd())
 
-os.chdir("./Images_On_ESP")
+    os.chdir("./Images_On_ESP")
 
-convert_image_2_dithered(f"{name}.png", rotate)
+    convert_image_2_dithered(f"{img}.png", rotate)
 
-convert_image_2_7_colors(name, "dithered.png")
+    convert_image_2_7_colors(img, "dithered.png")
 
-update_image_array(name)
+    update_image_array(img)
 
-os.chdir(f"{name}")
-os.remove("dithered.png")
+    os.chdir(f"{img}")
+    os.remove("dithered.png")
 
-shutil.rmtree("jpgs")
-os.chdir("..")
-os.chdir("..")
+    shutil.rmtree("jpgs")
+    os.chdir("..")
