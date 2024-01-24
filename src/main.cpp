@@ -144,7 +144,7 @@ bool is_charging() {
 
 void pos_change_img(){
   changed_image_flag = true;
-  if(curr_image == 3){
+  if(curr_image == total_images - 1){
     curr_image = 0;
   } else {
     curr_image += 1;
@@ -154,7 +154,7 @@ void pos_change_img(){
 void neg_change_img(){
   changed_image_flag = true;
   if(curr_image == 0){
-    curr_image = 3;
+    curr_image = total_images - 1;
   } else {
     curr_image -= 1;
   }
@@ -260,53 +260,35 @@ void read_image_array(fs::FS &fs, const char * path){
     file.close();
 }
 
-void process_file(File image_file){
+
+void process_file_bin(){
   Serial.println("Processing file!");
-  unsigned long start = millis();
+  char buffer[200];
+  snprintf(buffer, 200, "/sdcard/Images/%s/%s.bin", image_names[curr_image].c_str(), image_names[curr_image].c_str());
+  FILE *bin_file = fopen(buffer, "rb");
+  if(!bin_file){
+    Serial.println("Failed to open file for reading");
+    return;
+  }
   String file_content = "";
   int curr_array = 0;
-  int arrayIndex = 0;
-  int arr_item = 0;
-  bool end_of_array = false;
-  while (image_file.available() && curr_array < 7) {
-    file_content = image_file.readStringUntil('\n');
-    end_of_array = false;
-    if(file_content.indexOf("{") != -1){
-      arrayIndex = 0;
-      while(end_of_array == false){
-        file_content = image_file.readStringUntil('\n');
-        if(file_content.indexOf("}") != -1){
-          curr_array++;
-          end_of_array = true;
-        } else {
-          arr_item = 0;
-          char* arrayValue = strtok((char*)file_content.c_str(), ",");
-          while (arrayValue != NULL && arr_item < 4200) {
-            color_arrays[curr_array][arrayIndex++] = (unsigned char)strtol(arrayValue, NULL, 16);
-            arr_item++;
-            arrayValue = strtok(NULL, ",");
-          }
-        }
+  while (curr_array < 7) {
+    for(int i = 0; i < 33600; i++){
+      if(fread(&color_arrays[curr_array][i], sizeof(unsigned char), 1, bin_file) == 0){
+        Serial.println("Error reading file!");
+        return;
       }
     }
+    curr_array++;
   }
-  unsigned long end = millis();
-  unsigned long total = (end - start)/1000;
-  Serial.printf("Time to process file: %lu\n", total);
 }
 
-void setup_color_arrays(fs::FS &fs){
+void setup_color_arrays_bin(){
   if (total_images == 0){
     Serial.println("No images found!");
     return;
   }
-  File image_file = fs.open("/Images/" + image_names[curr_image] + "/" + image_names[curr_image] + ".c", FILE_READ);
-  if(!image_file){
-    Serial.println("Failed to open file for reading");
-    return;
-  }
-  process_file(image_file);
-  image_file.close();
+  process_file_bin();
 }
 
 void sd_setup(){
@@ -332,7 +314,7 @@ void first_boot_setup(){
   if (first_boot == true){
     curr_image = 0;
     first_boot = false;
-    setup_color_arrays(SD_MMC);
+    setup_color_arrays_bin();
     Serial.printf("Before buffer\n");
     char buffer[200];
     snprintf(buffer, 200, "Changing Image to: %s\n", image_names[curr_image].c_str());
@@ -394,7 +376,7 @@ void loop() {
     else if (!changed_image_flag && display_image_flag){
       snprintf(buffer, 200, "Changing Image to: %s\n", image_names[curr_image].c_str());
       display_text(buffer);
-      setup_color_arrays(SD_MMC);
+      setup_color_arrays_bin();
       display_image();
       epaper_display.hibernate();
       snprintf(buffer, 200, "Current Image is: %s\n", image_names[curr_image].c_str());
