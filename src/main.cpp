@@ -222,7 +222,6 @@ void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
         Serial.println("Not a directory");
         return;
     }
-
     File file = root.openNextFile();
     while(file){
         if(file.isDirectory()){
@@ -259,7 +258,6 @@ void read_image_array(fs::FS &fs, const char * path){
     Serial.printf("Total Images: %d\n", total_images);
     file.close();
 }
-
 
 void process_file_bin(){
   Serial.println("Processing file!");
