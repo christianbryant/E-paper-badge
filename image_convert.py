@@ -55,8 +55,6 @@ def convert_image_2_7_colors(name, image):
     # Open the input image
     input_image = Image.open(image)
     input_image = input_image.convert('RGB')
-    width, height = input_image.size
-    # os.chdir("/src/Images")
 
     # Find each color in the image, create an new image for only that color and save it
     current_color = 0
@@ -76,27 +74,24 @@ def convert_image_2_7_colors(name, image):
         new_image.save(str(colors[current_color]) + ".bmp")
         os.chdir("..")
 
-        convert_bmp_to_array("./bmp/" + str(colors[current_color]) + ".bmp", name, str(colors[current_color]))
+        convert_bmp_to_binary("./bmp/" + str(colors[current_color]) + ".bmp", name)
         current_color += 1
     shutil.rmtree("bmp")
     print("Images saved successfully.")
 
-
+# No longer used
 def convert_bmp_to_array(bmp_file, name, curr_color):
     bmp = Image.open(bmp_file).convert('1')
-    width, height = bmp.size
 
     image_data = list(bmp.getdata())
 
-    with open (name + ".c", "a") as file:
-        file.write(f"const unsigned char {curr_color}[{width * height // 8}] = {{\n")
+    with open (name + ".txt", "a") as file:
+        file.write(f"{{\n")
 
         bit_list = []
 
         bit_index = 8
         byte_counter = 0
-
-
 
         for x in range(0, len(image_data)):
             bit_value = 0 if image_data[x] > 0 else 1
@@ -108,15 +103,15 @@ def convert_bmp_to_array(bmp_file, name, curr_color):
                 byte = 0
                 for bit in bit_list:
                     byte = (byte << 1) | bit
-                file.write(f"0x{byte:02x}")
+                file.write(f"{byte}")
                 if x + 1 != len(image_data):
-                    file.write(", ")
+                    file.write(",")
                 bit_list = []
                 bit_index = 8
                 if x+1 == len(image_data):
                     bit_index = 0
                 byte_counter += 1
-                if byte_counter % 16 == 0:
+                if byte_counter % 4200 == 0:
                     file.write("\n")
             
             if x + 1 == len(image_data) and bit_index != 0:
@@ -125,16 +120,57 @@ def convert_bmp_to_array(bmp_file, name, curr_color):
                     bit_list.append(0)
                 for bit in bit_list:
                     byte = (byte << 1) | bit
-                file.write(f"0x{byte:02x}")
+                file.write(f"{byte}")
                 bit_list = []
                 bit_index = 7
                 byte_counter += 1
         file.write("};\n")
 
+# Binary for the win :)
+def convert_bmp_to_binary(bmp_file, name):
+    bmp = Image.open(bmp_file).convert('1')
+
+    image_data = list(bmp.getdata())
+
+    with open (name + ".bin", "ab") as file:
+        bit_list = []
+
+        bit_index = 8
+        byte_counter = 0
+
+        for x in range(0, len(image_data)):
+            bit_value = 0 if image_data[x] > 0 else 1
+
+            bit_list.append(bit_value)
+            bit_index -= 1
+
+            if bit_index == 0:
+                byte = 0
+                for bit in bit_list:
+                    byte = (byte << 1) | bit
+                byte_data = byte.to_bytes(1, byteorder='big')
+                file.write(byte_data)
+                bit_list = []
+                bit_index = 8
+                if x+1 == len(image_data):
+                    bit_index = 0
+                byte_counter += 1
+            
+            if x + 1 == len(image_data) and bit_index != 0:
+                byte = 0
+                for index in range(len(bit_list), 8):
+                    bit_list.append(0)
+                for bit in bit_list:
+                    byte = (byte << 1) | bit
+                byte_data = byte.to_bytes(1, byteorder='big')
+                file.write(byte_data)
+                bit_list = []
+                bit_index = 7
+                byte_counter += 1
+
 def update_image_array(name):
     os.chdir("jpgs")
     img = Image.open("black.jpg")
-    width, height = img.size
     os.chdir("..")
     os.chdir("..")
     print(os.getcwd())
