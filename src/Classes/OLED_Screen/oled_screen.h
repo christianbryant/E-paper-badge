@@ -9,7 +9,7 @@ class Oled_Screen {
         void setup();
         void display_text(String text);
     private:
-        Adafruit_SSD1331 oled_display = Adafruit_SSD1331(7, 18, 15, 16, 17); // Oled Screen
+        Adafruit_SSD1331 oled_display; // Oled Screen
 };
 
 #endif

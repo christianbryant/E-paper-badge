@@ -8,6 +8,8 @@
 #include <SD_MMC.h>
 #include <FS.h>
 
+#include "./Classes/Buttons/buttons.h"
+
 #include "../.pio/libdeps/esp32-s3-devkitm-1/GxEPD2/src/bitmaps/Bitmaps7c800x480.h"
 
 // // alternately you can copy the constructor from GxEPD2_display_selection.h or GxEPD2_display_selection_added.h to here
@@ -44,10 +46,13 @@ uint16_t getColor(int index) {
 unsigned char *color_arrays[7];
 
 RTC_DATA_ATTR bool first_boot = true;
-RTC_DATA_ATTR int curr_image;
+RTC_DATA_ATTR String image_names[50];
+
 RTC_DATA_ATTR unsigned long last_sleep_time;
 RTC_DATA_ATTR int total_images;
-RTC_DATA_ATTR String image_names[50];
+RTC_DATA_ATTR int curr_image;
+
+Buttons buttons;
 
 void allocate_color_arrays(){
   for (int i = 0; i < 7; i++){
@@ -67,9 +72,6 @@ void free_color_arrays(){
 
 bool is_displayed;
 
-bool display_image_flag;
-bool changed_image_flag;
-
 float busvoltage = 0;
 float current_mA = 0;
 float power_mW = 0;
@@ -81,12 +83,6 @@ float const R2 = 7500.0;
 float const MAX_BATTERY_VOLTAGE = 4.2;
 float const MIN_BATTERY_VOLTAGE = 3.3;
 
-//variables to keep track of the timing of recent interrupts
-unsigned long button_time = 0;  
-unsigned long last_button_time = 0; 
-
-// GPIO pins for buttons
-int buttons[4] = {6,21,48,47};
 
 void oled_setup() {
   oled_display.begin();
@@ -140,74 +136,6 @@ bool is_charging() {
   delay(1000);
   float curr;
   return curr > prev;
-}
-
-void pos_change_img(){
-  changed_image_flag = true;
-  if(curr_image == total_images - 1){
-    curr_image = 0;
-  } else {
-    curr_image += 1;
-  }
-}
-
-void neg_change_img(){
-  changed_image_flag = true;
-  if(curr_image == 0){
-    curr_image = total_images - 1;
-  } else {
-    curr_image -= 1;
-  }
-}
-
-void button_0(){
-  button_time = millis();
-  if (button_time - last_button_time >= 500)
-    {
-      last_button_time = millis();
-      last_sleep_time = millis();
-      display_image_flag = true;
-    }
-}
-
-void button_1(){
-  button_time = millis();
-  if (button_time - last_button_time >= 500)
-    {
-      last_button_time = millis();
-      last_sleep_time = millis();
-      neg_change_img();
-    }
-}
-
-void button_2(){
-  button_time = millis();
-    if (button_time - last_button_time >= 500)
-    {
-      last_button_time = millis();
-      last_sleep_time = millis();
-      pos_change_img();
-    }
-}
-
-void button_3(){
-  button_time = millis();
-  if (button_time - last_button_time >= 500)
-    {
-      last_button_time = millis();
-      last_sleep_time = millis();
-      display_image_flag = true;
-    }
-}
-
-void setup_buttons(){
-  for (int i = 0; i < 4; i++){
-    pinMode(buttons[i], INPUT_PULLUP);
-  }
-  attachInterrupt(buttons[0], button_0, FALLING);
-  attachInterrupt(buttons[1], button_1, FALLING);
-  attachInterrupt(buttons[2], button_2, FALLING);
-  attachInterrupt(buttons[3], button_3, FALLING);
 }
 
 void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
@@ -323,10 +251,24 @@ void first_boot_setup(){
   }
 }
 
+void setup_button_inturrupts(){
+  for (int i = 0; i < 4; i++){
+    pinMode(buttons.get_buttons()[i], INPUT_PULLUP);
+  }
+  attachInterrupt(buttons.get_buttons()[0], buttons.button_0, FALLING);
+  attachInterrupt(buttons.get_buttons()[1], buttons.button_0, FALLING);
+  attachInterrupt(buttons.get_buttons()[2], buttons.button_0, FALLING);
+  attachInterrupt(buttons.get_buttons()[3], buttons.button_0, FALLING);
+}
+
+void class_setups(){
+  buttons = Buttons();
+  setup_button_inturrupts();
+}
+
 void ESP_Setup(){
   esp_sleep_enable_ext0_wakeup(GPIO_NUM_6, 0);
   Serial.begin(115200);
-  setup_buttons();
 }
 
 void epaper_Setup(){
@@ -339,6 +281,7 @@ void setup()
 {
   oled_setup();
   ESP_Setup();
+  class_setups();
   epaper_Setup();
   if(digitalRead(39) == HIGH){
     sd_setup();
@@ -354,24 +297,22 @@ void setup()
   read_image_array(SD_MMC, "/Images/Image_array.txt");
   allocate_color_arrays();
   first_boot_setup();
-  last_button_time = millis();
   char buffer[200];
   snprintf(buffer, 200, "Current Image is: %s\n", image_names[curr_image].c_str());
   display_text(buffer);
-  last_sleep_time = millis();
 }
 
 void loop() {
   unsigned long curr_time = millis();
   char buffer[200];
-  if(curr_time - last_sleep_time <= 100000){
-    if(changed_image_flag && !display_image_flag){
+  if(curr_time - buttons.get_last_sleep_time() <= 100000){
+    if(buttons.get_changed_image_flag() && !buttons.get_display_image_flag()){
       snprintf(buffer, 200, "Change image to: %s\n", image_names[curr_image].c_str());
       display_text(buffer);
-      changed_image_flag = false;
+      buttons.set_changed_image_flag(false);
       delay(100);
     } 
-    else if (!changed_image_flag && display_image_flag){
+    else if (!buttons.get_changed_image_flag() && buttons.get_display_image_flag()){
       snprintf(buffer, 200, "Changing Image to: %s\n", image_names[curr_image].c_str());
       display_text(buffer);
       setup_color_arrays_bin();
@@ -379,14 +320,14 @@ void loop() {
       epaper_display.hibernate();
       snprintf(buffer, 200, "Current Image is: %s\n", image_names[curr_image].c_str());
       display_text(buffer);
-      display_image_flag = false;
-      changed_image_flag = false;
+      buttons.set_display_image_flag(false);
+      buttons.set_changed_image_flag(false);
     }
   } else {
     display_text("Going to sleep!\n");
     free_color_arrays();
     delay(5000);
-    last_sleep_time = millis();
+    buttons.set_last_sleep_time(millis());
     esp_deep_sleep_start();
   }
 };

@@ -17,7 +17,5 @@ class Image_processing {
     private:
         unsigned char *color_arrays[7];
         RTC_DATA_ATTR String image_names[50];
-        RTC_DATA_ATTR int total_images;
-        RTC_DATA_ATTR int curr_image;
 };
 #endif
