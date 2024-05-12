@@ -41,7 +41,7 @@ TBD
 
 ## Authors
 
-* **Christian Bryant** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Christian Bryant** - *Initial work* - [christianbryant](https://github.com/christianbryant)
 
 ## License
 
