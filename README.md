@@ -11,9 +11,21 @@ This device follows these set of rules:
 5. Must be fully open-source
 ```
 
+## Items Needing to be Completed
+
+* Menu LCD Development
+* Code Comments
+* OOP Restructuring
+* GUI development for Python Script
+* Thinner Model
+* PCB Polishing and send-off
+* User-guides
+* Edge-case Tests
+
+
 ## Getting Started
 
-TBD
+TODO
 
 ### Prerequisites
 
@@ -21,7 +33,7 @@ Platform.io
 
 ### Installing
 
-TBD
+TODO
 
 ## Deployment
 
@@ -29,15 +41,19 @@ Code will be flashed onto an ESP-32-S3 MCU board, custom-made by myself
 
 ## Built With
 
-TBD
+* Platform.io
+* Fusion360
+* EasyEDA
+* Python
+* TODO
 
 ## Contributing
 
-TBD
+TODO
 
 ## Versioning
 
-TBD
+TODO
 
 ## Authors
 
@@ -49,4 +65,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-TBD
+TODO
