@@ -12,6 +12,7 @@ This device follows these set of rules:
 ```
 
 * Take a look into MicroPython implementation to allow the user to just upload png data to the device.
+Resource: https://stackoverflow.com/questions/66022519/is-it-possible-to-pass-data-between-micropython-and-c-in-esp32 & https://docs.micropython.org/en/latest/develop/cmodules.html
 
 ## Items Needing to be Completed
 
