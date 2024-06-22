@@ -11,6 +11,8 @@ This device follows these set of rules:
 5. Must be fully open-source
 ```
 
+* Take a look into MicroPython implementation to allow the user to just upload png data to the device.
+
 ## Items Needing to be Completed
 
 * Menu LCD Development
