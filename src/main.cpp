@@ -14,6 +14,7 @@
 // // e.g. for Wemos D1 mini:
 GxEPD2_7C < GxEPD2_565c, GxEPD2_565c::HEIGHT / 2 > epaper_display(GxEPD2_565c(/*CS=5*/ 10, /*DC=*/ 13, /*RST=*/ 3, /*BUSY=*/ 14)); // Waveshare 5.65" 7-color
 
+// CS = 7, DC = 18, SDA = 15, SCK = 16, RST = 17
 Adafruit_SSD1331 oled_display = Adafruit_SSD1331(7, 18, 15, 16, 17); // Oled Screen
 
 Adafruit_INA219 ina219; // Current Monitor
